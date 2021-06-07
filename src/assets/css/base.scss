@@ -1,0 +1,147 @@
+.lk-relative,
+.lk-rela {
+	position: relative;
+}
+
+.lk-absolute,
+.lk-abso {
+	position: absolute;
+}
+
+.lk-font-xs {
+	font-size: 12px;
+}
+
+.lk-font-sm {
+	font-size: 14px;
+}
+
+.lk-font-md {
+	font-size: 16px;
+}
+
+.lk-font-lg {
+	font-size: 18px;
+}
+
+.lk-font-xl {
+	font-size: 20px;
+}
+
+.lk-flex {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.lk-flex-wrap {
+	flex-wrap: wrap;
+}
+
+.lk-flex-nowrap {
+	flex-wrap: nowrap;
+}
+
+.lk-col-center {
+	align-items: center;
+}
+
+.lk-col-top {
+	align-items: flex-start;
+}
+
+.lk-col-bottom {
+	align-items: flex-end;
+}
+
+.lk-row-center {
+	justify-content: center;
+}
+
+.lk-row-left {
+	justify-content: flex-start;
+}
+
+.lk-row-right {
+	justify-content: flex-end;
+}
+
+.lk-row-between {
+	justify-content: space-between;
+}
+
+.lk-row-around {
+	justify-content: space-around;
+}
+
+.lk-text-left {
+	text-align: left;
+}
+
+.lk-text-center {
+	text-align: center;
+}
+
+.lk-text-right {
+	text-align: right;
+}
+
+.lk-flex-col {
+	display: flex;
+	flex-direction: column;
+}
+
+// 定义flex等分
+@for $i from 0 through 12 {
+	.lk-flex-#{$i} {
+		flex: $i;
+	}
+}
+
+// 定义字体(px)单位，小于20都为px单位字体
+@for $i from 9 to 30 {
+	.lk-font-#{$i} {
+		font-size: $i + px;
+	}
+}
+
+// 定义内外边距，历遍1-80
+@for $i from 0 through 80 {
+	// 只要双数和能被5除尽的数
+	@if $i % 2 == 0 or $i % 5 == 0 {
+		// 得出：lk-margin-30或者lk-m-30
+		.lk-margin-#{$i}, .lk-m-#{$i} {
+			margin: $i + px!important;
+		}
+		
+		// 得出：lk-padding-30或者lk-p-30
+		.lk-padding-#{$i}, .lk-p-#{$i} {
+			padding: $i + px!important;
+		}
+		
+		@each $short, $long in l left, t top, r right, b bottom {
+			// 缩写版，结果如： lk-m-l-30
+			// 定义外边距
+			.lk-m-#{$short}-#{$i} {
+				margin-#{$long}: $i + px!important;
+			}
+			
+			// 定义内边距
+			.lk-p-#{$short}-#{$i} {
+				padding-#{$long}: $i + px!important;
+			}
+			
+			// 完整版，结果如：lk-margin-left-30
+			// 定义外边距
+			.lk-margin-#{$long}-#{$i} {
+				margin-#{$long}: $i + px!important;
+			}
+			
+			// 定义内边距
+			.lk-padding-#{$long}-#{$i} {
+				padding-#{$long}: $i + px!important;
+			}
+		}
+	}
+}
+

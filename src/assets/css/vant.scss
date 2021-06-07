@@ -1,0 +1,25 @@
+#app {
+  .van-button {
+    width: 100%;
+  }
+
+  .van-cell {
+    padding: 12px;
+  }
+
+  .van-field__label {
+    color: #333333;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .van-field__control {
+    color: #333333;
+    font-size: 16px;
+  }
+
+  .van-field--error .van-field__control,
+  .van-field--error .van-field__control::placeholder {
+    color: currentColor;
+  }
+}

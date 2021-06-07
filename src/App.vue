@@ -1,30 +1,34 @@
 <template>
-  <div id="nav">
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
+  <div id="app">
+    <layout />
   </div>
-  <router-view/>
 </template>
 
-<style>
+<script>
+import layout from "@/layouts"
+export default {
+  components: {
+    layout
+  },
+}
+</script>
+<style lang="scss">
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB,
+    Microsoft YaHei, 微软雅黑, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+  margin: 0 auto;
+  overflow-x: hidden;
+  font-size: 16px;
 }
-
-#nav {
-  padding: 30px;
-}
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
+#nprogress {
+  .bar {
+    background: #F8B500 !important; //自定义颜色
+  }
+  .spinner-icon {
+    border-top-color: #F8B500 !important;
+    border-left-color: #F8B500 !important;
+  }
 }
 </style>
