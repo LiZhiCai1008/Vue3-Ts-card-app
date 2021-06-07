@@ -5,6 +5,6 @@ export interface HttpResponse {
   data: {
     code: number
     message: string
-    [key: string]: unknown
+    [key: string]: any
   }
 }

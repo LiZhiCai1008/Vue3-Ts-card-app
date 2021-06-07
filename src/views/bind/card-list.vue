@@ -21,15 +21,16 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { CardService } from "@/api/card"
+import { HttpResponse } from "@/types/Response"
 export default defineComponent({
   name: "CardList",
   setup() {
     const handleClickBind = async (): Promise<void> => {
-      const data = await CardService.getUserCardListApi({
+      const { data }: HttpResponse = await CardService.getUserCardListApi({
         phone: "15297746924",
         orgId: "001125"
       })
-      console.log(data);
+      console.log(data.code);
     }
     return {
       handleClickBind

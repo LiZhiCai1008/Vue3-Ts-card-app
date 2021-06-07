@@ -1,9 +1,9 @@
 // http.ts
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import qs from "qs"
 import { Toast } from 'vant';
 
-const service = axios.create({
+const service: AxiosInstance = axios.create({
   // 联调
   // baseURL: process.env.NODE_ENV === 'production' ? `/` : '/api',
   baseURL: process.env.VUE_APP_BASE_API,
@@ -75,7 +75,7 @@ export const clearPending = (): void => {
 }
 
 // 请求拦截器
-service.interceptors.request.use((config: AxiosRequestConfig) => {
+service.interceptors.request.use((config: AxiosRequestConfig): AxiosRequestConfig => {
   // console.log(config, "config");
   // let token = localStorage.getItem("TOKEN");
   // if (token) {
@@ -111,26 +111,26 @@ service.interceptors.response.use((response: AxiosResponse) => {
   // const status = response.status
   removePending(response) // 在请求结束后，移除本次请求
   const { code, message } = response.data;
-      if (code == 10002 || code == 10006 || code == 10005 || code == 10034) {
-        // 10002 token已经过期，10006登录状态失效
-        // resetAllStorage();
-        return response;
-      }
-      const WHITE_CODES = [83001];
-      if (
-        (response && response.data && code < 0) ||
-        (code && code !== 200 && code !== 100)
-      ) {
-        // 更改错误码，增加情况，当code不为100，不为200，且code存在的时候
-        if (!WHITE_CODES.includes(code) && message) {
-          Toast({
-            message: message,
-            duration: 3000
-          });
-        }
-        return Promise.reject(response.data);
-      }
-      return response.data;
+  if (code == 10002 || code == 10006 || code == 10005 || code == 10034) {
+    // 10002 token已经过期，10006登录状态失效
+    // resetAllStorage();
+    return response;
+  }
+  const WHITE_CODES = [83001];
+  if (
+    (response && response.data && code < 0) ||
+    (code && code !== 200 && code !== 100)
+  ) {
+    // 更改错误码，增加情况，当code不为100，不为200，且code存在的时候
+    if (!WHITE_CODES.includes(code) && message) {
+      Toast({
+        message: message,
+        duration: 3000
+      });
+    }
+    return Promise.reject(response);
+  }
+  return response;
 }, (error) => {
   if (axios.isCancel(error)) {
     console.log('repeated request: ' + error.message)
