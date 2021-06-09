@@ -1,5 +1,5 @@
 import request from "@/request/interceptors"
-import { HttpResponse } from "@/types/Response"
+import { HttpResponse } from "@/types/Response.d"
 import { GetMsgCodeParams } from "@/types/App"
 
 

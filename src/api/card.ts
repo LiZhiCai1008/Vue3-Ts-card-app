@@ -1,6 +1,6 @@
 import request from "@/request/interceptors"
-import { HttpResponse } from "@/types/Response"
-import { GetCardListParams } from "@/types/Card"
+import { HttpResponse } from "@/types/Response.d"
+import { GetCardListParams, GetCardInfoParams } from "@/types/Card"
 
 
 //封装储值卡的接口方法
@@ -16,6 +16,36 @@ export class CardService {
       method: "get",
       params: {
         ...params
+      }
+    })
+  }
+  // 获取卡信息详情接口
+  static getCardInfoApi(params: GetCardInfoParams): Promise<HttpResponse> {
+    return request({
+      url: 'service/marketing/memberCard/h5/v1/getCardInfo',
+      method: "get",
+      params: {
+        ...params
+      }
+    })
+  }
+  // 更新储值卡消费限制
+  static updateLimitApi(data: GetCardListParams): Promise<HttpResponse> {
+    return request({
+      url: 'service/marketing/memberCard/h5/v1/updateLimit',
+      method: "post",
+      data: {
+        ...data
+      }
+    })
+  }
+  // 更新储值卡状态
+  static updateCardStatusApi(data: GetCardListParams): Promise<HttpResponse> {
+    return request({
+      url: 'service/marketing/memberCard/h5/v1/updateStatus',
+      method: "post",
+      data: {
+        ...data
       }
     })
   }
