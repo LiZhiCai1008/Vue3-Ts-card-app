@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import Nprogress from "nprogress"
+import Nprogress from "nprogress"
 import NavConfig from "./config"
-
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
@@ -9,10 +8,10 @@ const router = createRouter({
 })
 router.beforeEach((to, form, next) => {
   console.log("跳转之前", to, form)
-  // Nprogress.start()
+  Nprogress.start()
   next()
 })
 router.afterEach(() => {
-  // Nprogress.done()
+  Nprogress.done()
 });
 export default router

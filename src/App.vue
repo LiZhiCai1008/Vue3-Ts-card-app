@@ -4,13 +4,31 @@
   </div>
 </template>
 
-<script>
-import layout from "@/layouts"
-export default {
+<script lang="ts">
+import layout from "@/layouts/index.vue"
+import { defineComponent, onMounted } from "vue";
+import { useStore } from 'vuex'
+export default defineComponent({
   components: {
     layout
   },
-}
+  setup() {
+    const store = useStore()
+    onMounted(() => {
+      const ORG_ID = localStorage.getItem("ORG_ID")
+      const localCardInfoStr = localStorage.getItem("CARD_INFO") || "{}"
+      const localCardListStr = localStorage.getItem("CARD_LIST") || "[]"
+      const localMemberInfoStr = localStorage.getItem("MEMBER_INFO") || "{}"
+      let localCardInfo = JSON.parse(localCardInfoStr)
+      let localCardList = JSON.parse(localCardListStr) || []
+      let localMemberInfo = JSON.parse(localMemberInfoStr)
+      store.commit("app/SET_ORG_ID", ORG_ID || "")
+      store.dispatch("entery/setMemberInfo", localMemberInfo || {})
+      store.dispatch("card/setCardInfo", localCardInfo || {})
+      store.commit("app/SET_CARD_LIST", localCardList || [])
+    })
+  }
+})
 </script>
 <style lang="scss">
 #app {

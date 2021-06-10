@@ -2,10 +2,11 @@
 import { CardService } from '@/api/card'
 import router from '@/router'
 // import { amountFmt } from '@/utils/filter'
-import { GetCardInfoParams } from "@/types/Card"
+import { GetCardInfoParams } from "@/api/types/Card"
+import { Card } from "@/types/Card.d"
 type State = {
   cardId: string,
-  cardList: any[],
+  cardList: Card[],
   cardInfo: any
 }
 export default {
@@ -23,7 +24,7 @@ export default {
       localStorage.setItem("CARD_INFO", JSON.stringify(payload))
       state.cardInfo = payload
     },
-    SET_CARD_LIST(state: State, payload: any[]): void {
+    SET_CARD_LIST(state: State, payload: Card[]): void {
       localStorage.setItem("CARD_LIST", JSON.stringify(payload))
       state.cardList = payload
     },
@@ -34,7 +35,7 @@ export default {
   },
   actions: {
     // 设置卡信息
-    setCardInfo(ctx: any, payload: any): void {
+    setCardInfo(ctx: any, payload: Card): void {
       ctx.commit("SET_CARD_INFO", payload)
     },
     // 获取卡信息

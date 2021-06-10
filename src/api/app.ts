@@ -1,6 +1,11 @@
 import request from "@/request/interceptors"
 import { HttpResponse } from "@/types/Response.d"
-import { GetMsgCodeParams } from "@/types/App"
+import {
+  GetMsgCodeParams,
+  GetTradeRecordParams,
+  GetPackageParams,
+  WxPay
+} from "@/api/types/App"
 
 
 //封装储值卡app的接口方法
@@ -19,7 +24,7 @@ export class AppService {
     })
   }
   // 获取消费记录
-  static getTradeRecordApi(params: GetMsgCodeParams): Promise<HttpResponse> {
+  static getTradeRecordApi(params: GetTradeRecordParams): Promise<HttpResponse> {
     return request({
       url: 'service/marketing/memberCard/tradeRecord/h5/v1/page',
       method: 'get',
@@ -27,7 +32,7 @@ export class AppService {
     })
   }
   // 获取充值套餐
-  static getChargePackageApi(params: GetMsgCodeParams): Promise<HttpResponse> {
+  static getChargePackageApi(params: GetPackageParams): Promise<HttpResponse> {
     return request({
       url: 'service/marketing/memberCard/recharge/v1/packages',
       method: 'get',
@@ -35,7 +40,7 @@ export class AppService {
     })
   }
   // 微信支付
-  static wxPayApi(data: GetMsgCodeParams): Promise<HttpResponse> {
+  static wxPayApi(data: WxPay): Promise<HttpResponse> {
     return request({
       url: 'service/marketing/memberCard/recharge/v1/wx/pay',
       method: 'post',

@@ -1,6 +1,11 @@
 import request from "@/request/interceptors"
 import { HttpResponse } from "@/types/Response.d"
-import { GetCardListParams, GetCardInfoParams } from "@/types/Card"
+import {
+  GetCardListParams,
+  GetCardInfoParams,
+  UpdateLimitParams,
+  UpdateStatusParams
+} from "@/api/types/Card"
 
 
 //封装储值卡的接口方法
@@ -30,7 +35,7 @@ export class CardService {
     })
   }
   // 更新储值卡消费限制
-  static updateLimitApi(data: GetCardListParams): Promise<HttpResponse> {
+  static updateLimitApi(data: UpdateLimitParams): Promise<HttpResponse> {
     return request({
       url: 'service/marketing/memberCard/h5/v1/updateLimit',
       method: "post",
@@ -40,7 +45,7 @@ export class CardService {
     })
   }
   // 更新储值卡状态
-  static updateCardStatusApi(data: GetCardListParams): Promise<HttpResponse> {
+  static updateCardStatusApi(data: UpdateStatusParams): Promise<HttpResponse> {
     return request({
       url: 'service/marketing/memberCard/h5/v1/updateStatus',
       method: "post",
