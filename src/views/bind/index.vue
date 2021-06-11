@@ -97,10 +97,10 @@
           label="其他信息"
           placeholder="请输入其他信息"
         />
-        <div class="content">
-          <p class="lk-m-t-12 font-3 lk-font-14">如无法扫描卡二维码，请联系管理员获取</p>
+        <div class="content defalut-bg">
+          <p class="lk-p-t-12 font-3 lk-font-14">如无法扫描卡二维码，请联系管理员获取</p>
           <van-button
-            class="lk-m-t-40 font-1"
+            class="font-1 lk-m-t-40 "
             color="#F8B500"
             block
             round
@@ -118,7 +118,7 @@ import { getWxJsConfigAction } from '@/utils/wx-config'
 import { BindService } from "@/api/bind"
 import { Toast } from 'vant'
 import { useStore } from 'vuex'
-import { defineComponent, computed, reactive, toRefs, ref } from "vue";
+import { defineComponent, computed, reactive, toRefs } from "vue";
 import { useRouter } from 'vue-router'
 export default defineComponent({
   name: "Bind",

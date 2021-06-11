@@ -1,9 +1,13 @@
 <template>
   <Page isHeader>
     <div class="bind-form">
-      <van-form label-width="2.2rem" ref="changeForm">
+      <van-form
+        label-width="2.2rem"
+        @submit="handleClickChange"
+        @failed="onFailed"
+      >
         <van-field
-          v-model="changeForm.cardNo"
+          v-model="cardNo"
           :rules="[
             { required: true, message: '请输入实体卡卡号' }
           ]"
@@ -18,7 +22,7 @@
           </template>
         </van-field>
         <van-field
-          v-model="changeForm.serialNo"
+          v-model="serialNo"
           :rules="[
             { required: true, message: '请输入序列号' }
           ]"
@@ -30,11 +34,11 @@
         />
         <van-field label="绑定手机号">
           <template v-slot:input>
-            <phone :phone="$route.query.phone || cardInfo.phone" />
+            <phone :phone="phone || cardInfo.phone" />
           </template>
         </van-field>
         <van-field
-          v-model="changeForm.oldPhoneCode"
+          v-model="oldPhoneCode"
           :rules="[
             { required: true, message: '请输入验证码' }
           ]"
@@ -47,11 +51,11 @@
           autocomplete="off"
         >
           <template #button>
-            <MsgCode :phone="$route.query.phone || cardInfo.phone" type="RECHARGE_CARD_CHANGE_PHONE_OLD" />
+            <MsgCode :phone="phone || cardInfo.phone" type="RECHARGE_CARD_CHANGE_PHONE_OLD" />
           </template>
         </van-field>
         <van-field
-          v-model="changeForm.newPhone"
+          v-model="newPhone"
           :rules="[
             { required: true, message: '请输入更换手机号' },
             { pattern: patternPhone, message: '手机号格式错误' }
@@ -65,7 +69,7 @@
           autocomplete="off"
         />
         <van-field
-          v-model="changeForm.newPhoneCode"
+          v-model="newPhoneCode"
           :rules="[
             { required: true, message: '请输入验证码' }
           ]"
@@ -78,19 +82,19 @@
           autocomplete="off"
         >
           <template #button>
-            <MsgCode :phone="changeForm.newPhone" type="RECHARGE_CARD_CHANGE_PHONE_NEW" />
+            <MsgCode :phone="newPhone" type="RECHARGE_CARD_CHANGE_PHONE_NEW" />
           </template>
         </van-field>
+        <div class="content lk-p-t-40 defalut-bg">
+          <van-button
+            class="font-1"
+            color="#F8B500"
+            block
+            round
+            native-type="submit"
+          >更换</van-button>
+        </div>
       </van-form>
-    </div>
-    <div class="content">
-      <van-button
-        class="lk-m-t-40 font-1"
-        color="#F8B500"
-        block
-        round
-        @click="handleClickChange"
-      >更换</van-button>
     </div>
   </Page>
 </template>
@@ -98,10 +102,10 @@
 <script lang="ts">
 import MsgCode from '@/components/Msgcode.vue'
 import Phone from '@/components/Phone.vue'
-import { updateCardPhoneApi } from '@/api/bind'
+import { BindService } from '@/api/bind'
 import { Toast } from 'vant'
-import { useRouter } from 'vue-router'
-import { defineComponent, computed, reactive } from 'vue'
+import { useRouter, useRoute, LocationQuery } from 'vue-router'
+import { defineComponent, computed, reactive, toRefs, onBeforeMount } from 'vue'
 import { getWxJsConfigAction } from '@/utils/wx-config'
 import { useStore } from 'vuex'
 export default defineComponent({
@@ -110,40 +114,35 @@ export default defineComponent({
     MsgCode,
     Phone
   },
-  setup(props) {
-    
-  },
-  data() {
-    return {
-      updateCardPhoneApi,
+  setup() {
+    const router = useRouter()
+    const route = useRoute()
+    const store = useStore()
+    const state = reactive<{ patternPhone: RegExp, phone: string }>({
       patternPhone: /^1[3456789]\d{9}$/,
-      changeForm: {
-        cardNo: "",
-        serialNo: "",
-        oldPhoneCode: "",
-        newPhone: "",
-        newPhoneCode: ""
-      },
-      hasBindInfo: {}
-    }
-  },
-  computed: {
-    ...mapState("entery", ["memberInfo"]),
-    ...mapState("card", ["cardInfo"])
-  },
-  beforeRouteEnter (to, from, next) {
-    // ...
-    next(vm => {
-      let { cardNo, serialNo } = to.query || {}
-      vm.changeForm.cardNo = cardNo
-      vm.changeForm.serialNo = serialNo
+      phone: ""
     })
-  },
-  methods: {
+    const changeForm = reactive({
+      cardNo: "",
+      serialNo: "",
+      oldPhoneCode: "",
+      newPhone: "",
+      newPhoneCode: ""
+    })
+    onBeforeMount(() => {
+      const query: LocationQuery = route.query
+      state.phone = String(query.phone || "")
+      changeForm.cardNo = String(query.cardNo || "")
+      changeForm.serialNo = String(query.serialNo || "")
+    })
+
+    const memberInfo = computed(() => store.state.entery.memberInfo)
+    const cardInfo = computed(() => store.state.card.cardInfo)
+
     // 点击扫描卡二维码
-    async handleScanCode() {
+    const handleScanCode = async (): Promise<any> => {
       if (process.env.VUE_APP_ENV === "development") {
-        this.parseResult("{host}/web/qrcode/recharge/card/1234567890123456/123123")
+        parseResult("{host}/web/qrcode/recharge/card/1234567890123456/123123")
         return false
       }
       const TOAST = Toast.loading({
@@ -156,55 +155,65 @@ export default defineComponent({
         window.wx.scanQRCode({
           needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
           scanType: ["qrCode"], // 可以指定扫二维码还是一维码，默认二者都有
-          success: res => {
+          success: (res: any) => {
             if (!res.resultStr) {
-              this.$toast("二维码信息获取为空!")
+              Toast("二维码信息获取为空!")
               return false;
             }
-            this.parseResult(res.resultStr)
+            parseResult(res.resultStr)
           },
           fail: () => {
-            this.$toast("二维码扫描失败!")
+            Toast("二维码扫描失败!")
           }
         })
       })
-      
-    },
+    }
+
     // 解析扫码内容
-    parseResult(str) {
+    const parseResult =(str: string): any => {
       // {host}/web/qrcode/recharge/card/1234567890123456/123123
       // {host}/web/qrcode/recharge/card/{cardNo}/{serialNo}
       if (!str) return false
       let resultSplit = str.split("/"),
         length = resultSplit.length
-      this.changeForm.cardNo = resultSplit[length - 2]
-      this.changeForm.serialNo = resultSplit[length - 1]
-    },
-    async handleClickChange() {
-      let that = this
-      this.$refs.changeForm.validate().then(async() => {
-        try {
-          const { code, content } = await that.updateCardPhoneApi({
-            ...that.changeForm,
-            memberNo: that.memberInfo.memberNo
+      changeForm.cardNo = resultSplit[length - 2]
+      changeForm.serialNo = resultSplit[length - 1]
+    }
+
+    const handleClickChange = async (): Promise<any> => {
+      try {
+        const { data } = await BindService.updateCardPhoneApi({
+          ...changeForm,
+          memberNo: memberInfo.value.memberNo
+        })
+        if (data.code === 200) {
+          console.log(data.content)
+          Toast("更改成功")
+          router.push({
+            name: "User",
+            query: {
+              cardNo: changeForm.cardNo,
+              serialNo: changeForm.serialNo
+            }
           })
-          if (code === 200) {
-            console.log(content)
-            that.$toast("更改成功")
-            this.$router.push({
-              name: "User",
-              query: {
-                cardNo: this.changeForm.cardNo,
-                serialNo: this.changeForm.serialNo
-              }
-            })
-          }
-        } catch (error) {
-          console.log(error)
         }
-      }).catch(() => {
-          that.$toast("信息有误，请检查")
-      })
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    const onFailed = (errorInfo: any) => {
+      console.log('failed', errorInfo);
+      Toast("信息有误，请检查")
+    }
+
+    return {
+      ...toRefs(state),
+      ...toRefs(changeForm),
+      cardInfo,
+      handleScanCode,
+      handleClickChange,
+      onFailed
     }
   }
 })
