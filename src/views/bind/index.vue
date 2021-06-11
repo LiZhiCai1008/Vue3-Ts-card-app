@@ -1,7 +1,11 @@
 <template>
   <Page isHeader>
     <div class="bind-form">
-      <van-form label-width="2rem" ref="bindForm">
+      <van-form
+        label-width="2rem"
+        @submit="handleClickSave"
+        @failed="onFailed"
+      >
         <van-field
           v-model="bindForm.cardNo"
           :rules="[
@@ -93,35 +97,39 @@
           label="其他信息"
           placeholder="请输入其他信息"
         />
+        <div class="content">
+          <p class="lk-m-t-12 font-3 lk-font-14">如无法扫描卡二维码，请联系管理员获取</p>
+          <van-button
+            class="lk-m-t-40 font-1"
+            color="#F8B500"
+            block
+            round
+            native-type="submit"
+          >绑定储值卡</van-button>
+        </div>
       </van-form>
-    </div>
-    <div class="content">
-      <p class="lk-m-t-12 font-3 lk-font-14">如无法扫描卡二维码，请联系管理员获取</p>
-      <van-button
-        class="lk-m-t-40 font-1"
-        color="#F8B500"
-        block
-        round
-        @click="handleClickSave"
-      >绑定储值卡</van-button>
     </div>
   </Page>
 </template>
 
-<script>
+<script lang="ts">
 import MsgCode from '@/components/Msgcode.vue'
 import { getWxJsConfigAction } from '@/utils/wx-config'
-import { cardBindApi } from "@/api/bind"
+import { BindService } from "@/api/bind"
 import { Toast } from 'vant'
-import { mapState } from 'vuex'
-export default {
+import { useStore } from 'vuex'
+import { defineComponent, computed, reactive, toRefs, ref } from "vue";
+import { useRouter } from 'vue-router'
+export default defineComponent({
   name: "Bind",
   components: {
     MsgCode
   },
-  data() {
-    return {
-      cardBindApi,
+  setup() {
+    const router = useRouter()
+    // 创建仓库
+    const store = useStore()
+    const state = reactive<{ patternPhone: RegExp, bindForm: any }>({
       patternPhone: /^1[3456789]\d{9}$/,
       bindForm: {
         cardNo: "",
@@ -131,16 +139,22 @@ export default {
         userName: "",
         remark: ""
       }
+    })
+    const memberInfo = computed(() => store.state.entery.memberInfo)
+    // 解析扫码内容
+    const parseResult = (str: string): any => {
+      // {host}/web/qrcode/recharge/card/1234567890123456/123123
+      // {host}/web/qrcode/recharge/card/{cardNo}/{serialNo}
+      if (!str) return false
+      let resultSplit = str.split("/"),
+        length = resultSplit.length
+      state.bindForm.cardNo = resultSplit[length - 2]
+      state.bindForm.serialNo = resultSplit[length - 1]
     }
-  },
-  computed: {
-    ...mapState("entery", ["memberInfo"])
-  },
-  methods: {
     // 点击扫描卡二维码
-    async handleScanCode() {
+    const handleScanCode = async (): Promise<any> => {
       if (process.env.VUE_APP_ENV === "development") {
-        this.parseResult("{host}/web/qrcode/recharge/card/1234567890123456/123123")
+        parseResult("{host}/web/qrcode/recharge/card/1234567890123456/123123")
         return false
       }
       const TOAST = Toast.loading({
@@ -148,77 +162,72 @@ export default {
         forbidClick: true,
       });
       await getWxJsConfigAction()
-      window.wx.ready(() => {
+      // eslint-disable-next-line no-undef
+      wx.ready(() => {
         TOAST.clear()
-        window.wx.scanQRCode({
+        // eslint-disable-next-line no-undef
+        wx.scanQRCode({
           needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
           scanType: ["qrCode"], // 可以指定扫二维码还是一维码，默认二者都有
-          success: res => {
+          success: (res: any) => {
             if (!res.resultStr) {
-              this.$toast("二维码信息获取为空!")
+              Toast("二维码信息获取为空!")
               return false;
             }
-            this.parseResult(res.resultStr)
+            parseResult(res.resultStr)
           },
           fail: () => {
-            this.$toast("二维码扫描失败!")
+            Toast("二维码扫描失败!")
           }
         })
       })
-      
-    },
-    // 解析扫码内容
-    parseResult(str) {
-      // {host}/web/qrcode/recharge/card/1234567890123456/123123
-      // {host}/web/qrcode/recharge/card/{cardNo}/{serialNo}
-      if (!str) return false
-      let resultSplit = str.split("/"),
-        length = resultSplit.length
-      this.bindForm.cardNo = resultSplit[length - 2]
-      this.bindForm.serialNo = resultSplit[length - 1]
-    },
-    async handleClickSave(values) {
-      console.log('submit', values);
-      let that = this
-      this.$refs.bindForm.validate().then(async() => {
-        try {
-          const { code, content } = await that.cardBindApi({
-            ...that.bindForm,
-            memberNo: that.memberInfo.memberNo,
-            orgId: localStorage.getItem("ORG_ID")
+    }
+    const handleClickSave = async (): Promise<any> => {
+      try {
+        const { data } = await BindService.cardBindApi({
+          ...state.bindForm,
+          memberNo: memberInfo.value.memberNo,
+          orgId: localStorage.getItem("ORG_ID")
+        })
+        if (data.code === 200) {
+          console.log(data.content)
+          Toast("绑定成功")
+          router.push({
+            name: "User",
+            query: {
+              cardNo: state.bindForm.cardNo,
+              serialNo: state.bindForm.serialNo
+            }
           })
-          if (code === 200) {
-            console.log(content)
-            that.$toast("绑定成功")
-            this.$router.push({
-              name: "User",
-              query: {
-                cardNo: this.bindForm.cardNo,
-                serialNo: this.bindForm.serialNo
-              }
-            })
-          }
-        } catch ({ code, message }) {
-          // 报错已绑定
-          console.log(code, message)
-          if (code === 83001) {
-            that.$toast("当前卡已被绑定，请更换手机号")
-            this.$router.push({
-              name: 'ChangePhone',
-              query: {
-                phone: message,
-                cardNo: this.bindForm.cardNo,
-                serialNo: this.bindForm.serialNo
-              }
-            })
-          }
         }
-      }).catch(() => {
-          that.$toast("卡信息有误，请检查")
-      })
+      } catch ({ data }) {
+        // 报错已绑定
+        console.log(data.code, data.message)
+        if (data.code === 83001) {
+          Toast("当前卡已被绑定，请更换手机号")
+          router.push({
+            name: 'ChangePhone',
+            query: {
+              phone: data.message,
+              cardNo: state.bindForm.cardNo,
+              serialNo: state.bindForm.serialNo
+            }
+          })
+        }
+      }
+    }
+    const onFailed = (errorInfo: any) => {
+      console.log('failed', errorInfo);
+      Toast("卡信息有误，请检查")
+    };
+    return {
+      ...toRefs(state),
+      handleScanCode,
+      handleClickSave,
+      onFailed
     }
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>

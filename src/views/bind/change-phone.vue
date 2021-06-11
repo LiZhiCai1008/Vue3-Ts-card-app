@@ -29,7 +29,7 @@
           placeholder="请输入序列号"
         />
         <van-field label="绑定手机号">
-          <template slot="input">
+          <template v-slot:input>
             <phone :phone="$route.query.phone || cardInfo.phone" />
           </template>
         </van-field>
@@ -95,18 +95,23 @@
   </Page>
 </template>
 
-<script>
+<script lang="ts">
 import MsgCode from '@/components/Msgcode.vue'
 import Phone from '@/components/Phone.vue'
 import { updateCardPhoneApi } from '@/api/bind'
 import { Toast } from 'vant'
+import { useRouter } from 'vue-router'
+import { defineComponent, computed, reactive } from 'vue'
 import { getWxJsConfigAction } from '@/utils/wx-config'
-import { mapState } from 'vuex'
-export default {
+import { useStore } from 'vuex'
+export default defineComponent({
   name: "ChangePhone",
   components: {
     MsgCode,
     Phone
+  },
+  setup(props) {
+    
   },
   data() {
     return {
@@ -202,7 +207,7 @@ export default {
       })
     }
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>

@@ -25,7 +25,7 @@ export default defineComponent({
       store.commit("app/SET_ORG_ID", ORG_ID || "")
       store.dispatch("entery/setMemberInfo", localMemberInfo || {})
       store.dispatch("card/setCardInfo", localCardInfo || {})
-      store.commit("app/SET_CARD_LIST", localCardList || [])
+      store.commit("card/SET_CARD_LIST", localCardList || [])
     })
   }
 })

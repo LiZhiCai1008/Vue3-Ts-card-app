@@ -23,146 +23,160 @@
         @blur="blur"
       >
         <template #button>
-          <MsgCode :phone="login.phone" type="ACTIVITY_SMS_SEND" template-code="ACTIVITY_SMS_SEND" @success="onSuccess" />
+          <MsgCode :phone="login.phone" type="ACTIVITY_SMS_SEND" template-code="ACTIVITY_SMS_SEND" />
         </template>
       </van-field>
-      <van-button class="pop-login" :loading="loading" round @click.native.stop="handleConfirmBind">登录</van-button>
+      <van-button class="pop-login" :loading="loading" round @click.stop="handleConfirmBind">登录</van-button>
     </div>
   </van-popup>
 </template>
 
-<script>
+<script lang="ts">
 import { Toast } from 'vant';
 import { decode } from 'js-base64';
 import MsgCode from '@/components/Msgcode.vue'
-import { getWeixinOpenIdApi, getBindByOpenidApi, bindMemberApi } from '@/api/entery'
+import { EnteryService } from '@/api/entery'
 import { getQueryStringByUrl } from '@/utils/getQueryByUrl'
-import { mapActions, mapMutations, mapState } from 'vuex'
-export default {
+import { useStore } from 'vuex'
+import { defineComponent, reactive, toRefs, computed, getCurrentInstance } from 'vue'
+import { useRouter } from 'vue-router'
+export default defineComponent({
   name: "Redirect",
   components: {
     MsgCode
   },
-  data() {
-    return {
-      toast: null,
+  setup() {
+    const app = getCurrentInstance()
+    const router = useRouter()
+    const store = useStore()
+    const state = reactive({
       showLogin: false,
       loading: false,
       openId: "",
       code: "",
       cardInfo: {
-        cardNo: "", // 扫码进入时传参
-        serialNo: "", // 扫码进入时传参
-        cardId: "" // 公众号菜单进入时传参
+        code: "",
+        orgId:"",
+        state: "",
+        appId: "",
+        cardId: ""
       },
       login: {
         phone: "",
         phoneCode: ""
       }
-    };
-  },
-  beforeRouteEnter (to, from, next) {
-    const OPEN_ID = localStorage.getItem("OPEN_ID")
-    // ...扫码或者公众号菜单进入
-    next(async vm => {
-      vm.showLogin = false
-      vm.toast = Toast.loading({
-        message: '加载中...',
-        forbidClick: true,
-        duration: 0
-      });
-      vm.cardInfo = {}
-      // 处理参数
-      vm.cardInfo = await getQueryStringByUrl()
-      console.log("...扫码或者公众号菜单进入", vm.cardInfo)
-      vm.code = vm.cardInfo.code
-      await vm.SET_ORG_ID(vm.cardInfo.orgId || "")
-      await vm.SET_CARD_ID(vm.cardInfo.cardId || "")
-      await vm.SET_WX_APP_ID(vm.cardInfo.appId || "")
-      vm.cardInfo.code && delete vm.cardInfo.code
-      vm.cardInfo.state && delete vm.cardInfo.state
-      vm.cardInfo.appId && delete vm.cardInfo.appId
-      vm.setCardInfo(vm.cardInfo)
-      if (OPEN_ID) {
-        vm.openId = OPEN_ID
-      } else {
-        await vm.getWxOpenIdAction()
-      }
-      await vm.getBindInfoAction()
     })
-  },
-  computed: {
-    ...mapState("app", ["findFlag", "orgId"])
-  },
-  methods: {
-    ...mapMutations("app", ["SET_ORG_ID", "SET_WX_APP_ID"]),
-    ...mapMutations("card", ["SET_CARD_ID"]),
-    ...mapActions("entery", ["setMemberInfo"]),
-    ...mapActions("card", ["setCardInfo", "getCardInfoAction"]),
-    async getWxOpenIdAction() {
-      const { code, content } = await getWeixinOpenIdApi({
-        code: this.code,
-        appId: this.$appId,
-        orgId: this.orgId || localStorage.getItem("ORG_ID")
-      })
-      console.log(code, content)
-      if (code === 200) {
-        this.openId = decode(content.thirdUserId);
-        localStorage.setItem("OPEN_ID", this.openId)
+    const toast = Toast.loading({
+      message: '加载中...',
+      forbidClick: true,
+      duration: 0
+    })
+    const firstEnterInitFun = async (): Promise<any> => {
+      try {
+        const OPEN_ID = localStorage.getItem("OPEN_ID")
+        console.log("OPENID-------------", OPEN_ID)
+        state.showLogin = false
+        state.cardInfo = {
+          code: "",
+          orgId:"",
+          state: "",
+          appId: "",
+          cardId: ""
+        }
+        // 处理参数
+        state.cardInfo = await getQueryStringByUrl()
+        console.log("...扫码或者公众号菜单进入", state.cardInfo)
+        state.code = state.cardInfo.code
+        store.commit("app/SET_ORG_ID", state.cardInfo.orgId || "")
+        store.commit("card/SET_CARD_ID", state.cardInfo.cardId || "")
+        store.commit("app/SET_WX_APP_ID", state.cardInfo.appId || "")
+        // state.cardInfo.code && delete state.cardInfo.code
+        // state.cardInfo.state && delete state.cardInfo.state
+        // state.cardInfo.appId && delete state.cardInfo.appId
+        store.dispatch("card/setCardInfo", state.cardInfo)
+        if (OPEN_ID) {
+          state.openId = OPEN_ID
+        } else {
+          await getWxOpenIdAction()
+        }
+        await getBindInfoAction()
+      } catch (error) {
+        console.log(error, "---------------------------")
+        toast.value = Toast.loading({
+          message: '加载中...',
+          forbidClick: true,
+          duration: 0
+        })
       }
-    },
-    async getBindInfoAction() {
-      console.log(this.findFlag)
-      const { code, content } = await getBindByOpenidApi({
-        openId: this.openId,
-        findFlag: this.findFlag
+    }
+    firstEnterInitFun()
+    const findFlag = computed(() => store.state.app.findFlag)
+    const orgId = computed(() => store.state.app.orgId)
+    const appId = app && app.appContext.config.globalProperties.$appId
+    const getWxOpenIdAction = async (): Promise<any> => {
+      const { data } = await EnteryService.getWeixinOpenIdApi({
+        code: state.code,
+        appId: appId,
+        orgId: orgId.value || localStorage.getItem("ORG_ID")
       })
-      if (code === 200) {
-        content && await this.setMemberInfo(content)
-        if (!content.memberNo || !content.phone) {
-          this.loading = false
-          this.toast.clear()
-          this.showLogin = true
+      console.log(data.code, data.content)
+      if (data.code === 200) {
+        state.openId = decode(data.content.thirdUserId);
+        localStorage.setItem("OPEN_ID", state.openId)
+      }
+    }
+    const getBindInfoAction = async (): Promise<any> => {
+      console.log(findFlag.value)
+      const { data } = await EnteryService.getBindByOpenidApi({
+        openId: state.openId,
+        findFlag: findFlag.value
+      })
+      if (data.code === 200) {
+        data.content && await store.dispatch("entery/setMemberInfo", data.content)
+        if (!data.content.memberNo || !data.content.phone) {
+          state.loading = false
+          toast.clear()
+          state.showLogin = true
           return false
         }
-        this.handlePageToDetail(true)
+        handlePageToDetail(true)
       }
-    },
-    async handleConfirmBind() {
-      this.loading = true
-      if (!this.login.phone || !this.login.phoneCode) {
-        this.$toast("请正确填写")
-        this.loading = false
+    }
+    const handleConfirmBind = async (): Promise<any> => {
+      state.loading = true
+      if (!state.login.phone || !state.login.phoneCode) {
+        Toast("请正确填写")
+        state.loading = false
         return false
       }
       try {
-        const { code, content } = await bindMemberApi({
-        ...this.login,
-        openId: this.openId,
+        const { data } = await EnteryService.bindMemberApi({
+        ...state.login,
+        openId: state.openId,
         scanAppName: "weixin",
         appId: localStorage.getItem("WX_APP_ID") || "" // 微信公众号appId
       })
-      if (code === 200) {
-        console.log(content)
-        content && await this.setMemberInfo(content)
-        this.$toast("登录成功")
-        this.handlePageToCardList() // 如果要登录，则跳转列表页面
-        this.loading = false
-        this.showLogin = false
+      if (data.code === 200) {
+        console.log(data.content)
+        data.content && await store.dispatch("entery/setMemberInfo", data.content)
+        Toast("登录成功")
+        handlePageToCardList() // 如果要登录，则跳转列表页面
+        state.loading = false
+        state.showLogin = false
       } else {
-        this.loading = false
+        state.loading = false
       }
       } catch (error) {
-        this.loading = false
+        state.loading = false
       }
-    },
+    }
     // 跳转详情
-    async handlePageToDetail(loading) {
-      console.log(loading, this.getCardInfoAction)
+    const handlePageToDetail = async (loading: boolean): Promise<any> => {
+      console.log(loading)
       try {
-        await this.getCardInfoAction({ check: true })
+        await store.dispatch("card/getCardInfoAction", { check: true })
         if (loading) {
-          this.toast.clear()
+          toast.clear()
         }
       } catch (error) {
         console.log(error)
@@ -172,29 +186,32 @@ export default {
           duration: 0
         });
       }
-    },
-    handlePageToCardList() {
+    }
+    const handlePageToCardList = (): void => {
       // 列表展示
       localStorage.removeItem('routeFlag')
-      this.$router.replace({
+      router.replace({
         name: "CardList",
         query: {
           status: 1
         }
       })
-    },
-    onSuccess() {
-      console.log("发送成功")
-    },
-    blur() {
+    }
+    const blur = (): void => {
       setTimeout(function(){
         var scrollHeight = document.documentElement.scrollTop || document.body.scrollTop || 0;
         console.log("blur", scrollHeight)
         window.scrollTo(0, Math.max(scrollHeight - 1, 0));
       }, 100);
     }
-  },
-}
+    return {
+      ...toRefs(state),
+      getWxOpenIdAction,
+      handleConfirmBind,
+      blur
+    }
+  }
+})
 </script>
 <style lang='scss' scoped>
 //@import url(); 引入公共css类
@@ -211,4 +228,5 @@ export default {
     margin: 12px 0 10px 0;
   }
 }
+
 </style>

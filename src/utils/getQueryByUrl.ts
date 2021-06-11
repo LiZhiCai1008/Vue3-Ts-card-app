@@ -1,30 +1,14 @@
 
-// export const getQueryStringByUrl = function (): Promise<T> {
-//   // http://localhost:9090/?code=021lCSFa162Y2B0btcGa1thC3c4lCSFd&state=#/redirect?cardId=64269721&orgId=0124
-//   let query = {};
-//   let href = location.href;
-//   console.log("=====herf======", href);
-//   let urls = href.split("#"); // 路由模式为hash
-//   // console.log(urls, "urls");
-//   urls.forEach(url => {
-//     let querystr = url.split("?")[1];
-//     if (!querystr) return;
-//     let querys = querystr.split("&") || [];
-//     querys.forEach(_q => {
-//       try {
-//         let keys = _q.split("=");
-//         query[keys[0]] = decodeURIComponent(keys[1]);
-//       } catch (error) {
-//         console.log("error");
-//       }
-//     });
-//   });
-//   console.log("query==========", query);
-//   return new Promise((resolve, reject) => {
-//     if (query) {
-//       resolve(query)
-//     } else {
-//       reject(false)
-//     }
-//   });
-// };
+import qs from 'qs'
+export const getQueryStringByUrl = function (): Promise<any> {
+  // localhost:8081/redirect?cardId=24724209&appId=wx934b0bac6cb081e8&orgId=0162&code=001p8fml22euc74ZiAml2sQ8nK2p8fmu&state=Home#/redirect
+  let query = {};
+  let search = location.search || ""
+  if (search.startsWith("?")) {
+    search = search.substr(1)
+  }
+  query = qs.parse(search)
+  return new Promise((resolve) => {
+    resolve(query)
+  })
+};

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { CardService } from '@/api/card'
-import router from '@/router'
+import router from '@/router/index'
 // import { amountFmt } from '@/utils/filter'
 import { GetCardInfoParams } from "@/api/types/Card"
 import { Card } from "@/types/Card.d"
@@ -128,9 +128,12 @@ export default {
           console.log(data.content)
           ctx.commit("SET_CARD_LIST", data.content || [])
           return data
+        } else {
+          return {}
         }
       } catch (error) {
         console.log(error)
+        return error
       }
     }
   },
