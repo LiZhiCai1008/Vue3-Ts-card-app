@@ -22,4 +22,7 @@
   .van-field--error .van-field__control::placeholder {
     color: currentColor;
   }
+  .van-cell__title {
+    min-width: 80%;
+  }
 }
