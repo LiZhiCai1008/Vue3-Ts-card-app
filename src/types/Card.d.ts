@@ -13,7 +13,15 @@ export interface MemberInfo {
   memberNo: string | number,
   [key: string]: any
 }
-
+// format函数
 export interface FormatType {
   (value: number): string
+}
+// user 菜单列表
+export interface MenuItem {
+  name: string,
+  icon: string,
+  urlName: string | number,
+  query?: any,
+  auth: boolean
 }

@@ -1,9 +1,9 @@
 <template>
   <Page isHeader>
     <van-list
-      v-model="loading"
+      v-model:loading="loading"
       :finished="finished"
-      :error.sync="error"
+      v-model:error="error"
       error-text="请求失败，点击重新加载"
       finished-text="没有更多了"
       @load="getRecordList"
@@ -15,58 +15,73 @@
         :title="item.tradeTypeStr"
         :label="item.gmtCreated"
       >
-        <span class="font-1 lk-font-xl">{{ item.payFlowType }}{{ item.tradeAmount | amountFmt }}</span>
+        <span class="font-1 lk-font-xl">{{ item.payFlowType }}{{ amountFmt(item.tradeAmount) }}</span>
       </van-cell>
     </van-list>
   </Page>
 </template>
 
-<script>
-import { getTradeRecordApi } from '@/api/app'
-import { mapState } from 'vuex'
-export default {
+<script lang="ts">
+import { AppService } from '@/api/app'
+import { useStore } from 'vuex'
+import { FormatType } from '@/types/Card'
+import { amountFmt } from '@/utils/filter'
+import { defineComponent, computed, reactive, toRefs } from 'vue'
+export default defineComponent({
   name: "Record",
   components: {},
-  data() {
-    return {
+  setup() {
+    const store = useStore()
+    const state = reactive<{
+      recordList: any,
+      page: number,
+      total: number,
+      loading: boolean,
+      finished: boolean,
+      error: boolean,
+      amountFmt: FormatType
+    }>({
       recordList: [],
       page: 1,
       total: 0,
       loading: false,
       finished: false,
-      error: false
-    }
-  },
-  computed: {
-    ...mapState('card', ['cardInfo'])
-  },
-  methods: {
-    async getRecordList() {
+      error: false,
+      amountFmt
+    })
+    const cardInfo = computed(() => store.state.card.cardInfo)
+
+    const getRecordList = async (): Promise<void> => {
       try {
-        const { code, content } = await getTradeRecordApi({
-          cardNo: this.cardInfo.cardNo,
-          serialNo: this.cardInfo.serialNo,
-          page: this.page,
+        const { data } = await AppService.getTradeRecordApi({
+          cardNo: cardInfo.value.cardNo,
+          serialNo: cardInfo.value.serialNo,
+          page: state.page,
           pageSize: 10
         })
-        if (code === 200) {
-          console.log(content)
-          this.recordList = this.recordList.concat(content.currentList)
-          this.total = content.totalSize
-          this.loading = false;
-          this.page ++
-          if (this.recordList.length >= this.total) {
-            this.finished = true;
+        if (data.code === 200) {
+          console.log(data.content)
+          state.recordList = state.recordList.concat(data.content.currentList)
+          state.total = data.content.totalSize
+          state.loading = false;
+          state.page ++
+          if (state.recordList.length >= state.total) {
+            state.finished = true;
           }
         }
       } catch (error) {
         console.log(error)
-        this.loading = false
-        this.error = true
+        state.loading = false
+        state.error = true
       }
     }
+    return {
+      ...toRefs(state),
+      cardInfo,
+      getRecordList
+    }
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>

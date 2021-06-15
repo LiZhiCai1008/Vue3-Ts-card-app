@@ -3,11 +3,24 @@ import { CardService } from '@/api/card'
 import router from '@/router/index'
 import { amountFmt } from '@/utils/filter'
 import { GetCardInfoParams } from "@/api/types/Card"
-import { Card } from "@/types/Card.d"
+import { Card, MenuItem } from "@/types/Card.d"
 type State = {
   cardId: string,
   cardList: Card[],
   cardInfo: any
+}
+type MessageItem = {
+  title: string,
+  message: string
+}
+type Message = {
+  [key: number]: MessageItem
+}
+type InfoPlayload = {
+  cardId?: string,
+  cardNo: string,
+  serialNo: string,
+  check?: boolean
 }
 export default {
   namespaced: true,
@@ -20,23 +33,27 @@ export default {
     }
   },
   mutations: {
-    SET_CARD_INFO(state: State, payload: any): void {
+    SET_CARD_INFO(state: State, payload: any): State {
       localStorage.setItem("CARD_INFO", JSON.stringify(payload))
       state.cardInfo = payload
+      return state
     },
-    SET_CARD_LIST(state: State, payload: Card[]): void {
+    SET_CARD_LIST(state: State, payload: Card[]): State {
       localStorage.setItem("CARD_LIST", JSON.stringify(payload))
       state.cardList = payload
+      return state
     },
-    SET_CARD_ID(state: State, payload: string): void {
+    SET_CARD_ID(state: State, payload: string): State {
       localStorage.setItem("CARD_ID", payload)
       state.cardId = payload
+      return state
     },
   },
   actions: {
     // 设置卡信息
-    setCardInfo(ctx: any, payload: Card): void {
+    setCardInfo(ctx: any, payload: Card): State {
       ctx.commit("SET_CARD_INFO", payload)
+      return ctx.state
     },
     // 获取卡信息
     /*
@@ -44,7 +61,7 @@ export default {
     * undefined || { check: true } 使用state中的cardNo和serialNo
     * { cardNo, serialNo } 使用参数payload中的cardNo和serialNo
     */
-    async getCardInfoAction(ctx: any, payload: any) {
+    async getCardInfoAction(ctx: any, payload?: InfoPlayload) {
       console.log(payload, "-----------")
       try {
         const localMember: string = localStorage.getItem("MEMBER_INFO") || ""
@@ -138,8 +155,8 @@ export default {
     }
   },
   getters: {
-    menuList(state: State) {
-      const menus = [
+    menuList(state: State): MenuItem[] {
+      const menus: MenuItem[] = [
         {
           name: '购买限制',
           icon: 'icongoumaixianzhi',
@@ -196,13 +213,14 @@ export default {
         return m.auth
       })
     },
-    messageBox(state: State) {
-      return {
+    messageBox(state: State): Message {
+      const MB: Message = {
         1: { title: '确定取消挂失', message: '取消挂失后，储值卡可正常购买，卡片遗失后建议申请补卡~' },
         2: { title: '确定取消补卡', message: '取消补卡后，储值卡可正常购买，卡片遗失后建议申请补卡~' },
         3: { title: '确定挂失', message: '挂失后，将无法刷卡购买' },
         4: { title: '确定申请补卡', message: `补卡将扣除${amountFmt(state.cardInfo.productionCost || 0)}元工本费~` }
       }
+      return MB
     }
   }
 }

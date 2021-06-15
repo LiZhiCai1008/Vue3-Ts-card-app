@@ -62,7 +62,7 @@
 <script lang="ts">
 import { NumberCut } from '@/utils/format'
 import { amountFmt, statusFmt } from '@/utils/filter'
-import { FormatType } from '@/types/Card'
+import { FormatType, MenuItem } from '@/types/Card'
 import { CardService } from '@/api/card'
 import { Dialog, Toast } from 'vant'
 import { useStore } from 'vuex'
@@ -96,7 +96,7 @@ export default defineComponent({
     const messageBox = computed(() => store.getters['card/messageBox'])
     
 
-    const handleClickMenu = (n: any): void => {
+    const handleClickMenu = (n: MenuItem): void => {
       console.log(n)
       if (typeof n.urlName === "number") {
         let idx = n.urlName
@@ -120,7 +120,7 @@ export default defineComponent({
         })
       }
     }
-    const updateStatusAction = async (idx: number): Promise<any> => {
+    const updateStatusAction = async (idx: number): Promise<void> => {
       // idx 1：正常（取消补卡 2，取消挂失）3：挂失 4：补卡
       try {
         const { data } = await CardService.updateCardStatusApi({
