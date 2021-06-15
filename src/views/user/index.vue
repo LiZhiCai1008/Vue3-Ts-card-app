@@ -4,7 +4,7 @@
       <!-- 卡信息 -->
       <div
         :style="{
-          backgroundImage: 'url(' + $baseImg + (cardInfo.coverUrl || 'photo/h5C/card/card_default.png') + ')'
+          backgroundImage: 'url(' + baseImg + (cardInfo.coverUrl || 'photo/h5C/card/card_default.png') + ')'
         }"
         class="card-box content lk-relative lk-m-t-12">
         <div class="card-info lk-flex lk-m-t-12">
@@ -12,12 +12,12 @@
             round
             width="36"
             height="36"
-            :src="$baseImg + (cardInfo.cardLogo || 'photo/h5C/card/card_logo.png')"
+            :src="baseImg + (cardInfo.cardLogo || 'photo/h5C/card/card_logo.png')"
           />
           <span class="info lk-font-16 van-ellipsis">{{ cardInfo.cardName }}</span>
         </div>
         <div class="card-status lk-absolute">
-          {{ cardInfo.status | statusFmt }}
+          {{ statusFmt(cardInfo.status || 0) }}
         </div>
         <p class="card-num lk-absolute lk-font-14">
           卡号：<span>{{  NumberCut(cardInfo.cardNo || "") }}</span>
@@ -27,7 +27,7 @@
       <div class="balance-box lk-m-t-16 lk-p-l-12 lk-p-r-12">
         <p class="font-3 lk-font-12 lk-m-b-4">余额/元</p>
         <div class="lk-flex lk-row-between">
-          <span class="font-1 lk-font-24 van-ellipsis">{{ cardInfo.totalAmount | amountFmt }}</span>
+          <span class="font-1 lk-font-24 van-ellipsis">{{ amountFmt(cardInfo.totalAmount) }}</span>
           <div
             :class="{ disabled: cardInfo.status !== 1 }"
             class="recharge-btn font-1"
@@ -59,101 +59,113 @@
   </Page>
 </template>
 
-<script>
+<script lang="ts">
 import { NumberCut } from '@/utils/format'
-import { updateCardStatusApi } from '@/api/card'
-import { mapState, mapActions, mapGetters } from 'vuex'
-export default {
+import { amountFmt, statusFmt } from '@/utils/filter'
+import { FormatType } from '@/types/Card'
+import { CardService } from '@/api/card'
+import { Dialog, Toast } from 'vant'
+import { useStore } from 'vuex'
+import { useRoute, useRouter } from 'vue-router'
+import { defineComponent, onActivated, reactive, toRefs, computed, getCurrentInstance } from 'vue'
+export default defineComponent({
   name: "User",
   components: {},
-  data() {
-    return {
-      NumberCut
-    }
-  },
-  beforeRouteEnter (to, from, next) {
-    // ...
-    next(vm => {
-      let { cardNo, serialNo } = to.query
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
+    const store = useStore()
+    const state = reactive<{ NumberCut: FormatType, amountFmt: FormatType, statusFmt: FormatType }>({
+      NumberCut,
+      statusFmt,
+      amountFmt
+    })
+    // 创建全局上下文
+    const app = getCurrentInstance()
+    const baseImg = app && app.appContext.config.globalProperties.$baseImg
+    onActivated(() => {
+      const { cardNo, serialNo } = route.query
       if (cardNo && serialNo) {
-        vm.getCardInfoAction({ cardNo, serialNo })
+        store.dispatch("card/getCardInfoAction", { cardNo, serialNo })
       } else {
-        vm.getCardInfoAction()
+        store.dispatch("card/getCardInfoAction")
       }
     })
-  },
-  computed: {
-    ...mapState("card", ["cardInfo"]),
-    ...mapGetters("card", ["menuList", "messageBox"])
-  },
-  methods: {
-    ...mapActions("card", ["getCardInfoAction"]),
-    ...mapActions("app", ["resetToLogin"]),
-    handleClickMenu(n) {
+    const cardInfo = computed(() => store.state.card.cardInfo)
+    const menuList = computed(() => store.getters['card/menuList'])
+    const messageBox = computed(() => store.getters['card/messageBox'])
+    
+
+    const handleClickMenu = (n: any): void => {
       console.log(n)
       if (typeof n.urlName === "number") {
         let idx = n.urlName
         console.log(idx)
         if (idx == 9) {
           console.log('打电话')
-          window.location.href = `tel://${this.cardInfo.servicePhone}`
-          return false
+          window.location.href = `tel://${cardInfo.value.servicePhone}`
+          return
         }
-        this.$dialog.confirm({
-          title: this.messageBox[idx].title,
-          message: this.messageBox[idx].message,
+        Dialog.confirm({
+          title: messageBox.value[idx].title,
+          message: messageBox.value[idx].message,
           confirmButtonColor: '#F8B500'
         }).then(() => {
-          this.updateStatusAction(idx)
-        }).catch(() => {})
+          updateStatusAction(idx)
+        }).catch(() => {console.log()})
       } else {
-        this.$router.push({
+        router.push({
           name: n.urlName,
           query: n.query
         })
       }
-    },
-    async updateStatusAction(idx) {
+    }
+    const updateStatusAction = async (idx: number): Promise<any> => {
       // idx 1：正常（取消补卡 2，取消挂失）3：挂失 4：补卡
       try {
-        const { code } = await updateCardStatusApi({
+        const { data } = await CardService.updateCardStatusApi({
           status: idx == 2 ? 1 : idx, // idx = 2的时候是取消补卡状态，但是后端都需要传1
-          cardNo: this.cardInfo.cardNo,
-          serialNo: this.cardInfo.serialNo
+          cardNo: cardInfo.value.cardNo,
+          serialNo: cardInfo.value.serialNo
         })
-        if (code === 200) {
+        if (data.code === 200) {
           let text = ["", "取消挂失成功", "取消补卡成功", "挂失成功", "申请补卡成功"]
-          this.$toast(text[idx])
-          this.getCardInfoAction()
+          Toast(text[idx])
+          store.dispatch("card/getCardInfoAction")
         }
       } catch (error) {
         console.log(error)
       }
-    },
-    handleToRecharge() {
-      // if (!this.cardInfo.rechargeEnable) {
-      //   this.$toast("当前储值卡已关闭充值")
-      //   return false
-      // }
-      if (this.cardInfo.status !== 1) {
-        this.$toast("当前储值卡处于非正常状态")
-        return false
+    }
+    const handleToRecharge = (): void => {
+      if (cardInfo.value.status !== 1) {
+        Toast("当前储值卡处于非正常状态")
+        return
       }
-      this.$router.push({
+      router.push({
         name: "Recharge"
       })
-    },
-    handleClickChangePhone() {
-      this.$dialog.confirm({
+    }
+    const handleClickChangePhone = (): void => {
+      Dialog.confirm({
         title: "确认切换手机号?",
         message: "切换手机号需要重新登录",
         confirmButtonColor: '#F8B500'
       }).then(() => {
-        this.resetToLogin()
-      }).catch(() => {})
+        store.dispatch("app/resetToLogin")
+      }).catch(() => {console.log()})
+    }
+    return {
+      ...toRefs(state),
+      handleClickMenu,
+      handleToRecharge,
+      menuList,
+      cardInfo,
+      handleClickChangePhone,
+      baseImg
     }
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>

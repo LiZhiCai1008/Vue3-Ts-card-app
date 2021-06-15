@@ -7,34 +7,27 @@
         height="120"
         :src="require('@/assets/images/error.svg')"
       />
-      <div class="lk-m-t-24 error-msg">{{ errorInfo.message }}</div>
+      <div class="lk-m-t-24 error-msg">{{ message }}</div>
     </div>
   </Page>
 </template>
 
-<script>
+<script lang="ts">
 import { getQueryStringByUrl } from '@/utils/getQueryByUrl'
-export default {
+import { defineComponent, ref } from 'vue'
+export default defineComponent({
   name: "Error",
-  components: {},
-  data() {
+  async setup() {
+    const message = ref("")
+    const query = await getQueryStringByUrl()
+    console.log(query)
+    message.value = query.message
+    console.log(message.value)
     return {
-      errorInfo: {
-        message: ""
-      }
-    };
-  },
-  beforeRouteEnter (to, from, next) {
-    // ...错误页面处理
-    next(async vm => {
-      // 处理参数
-      vm.errorInfo = await getQueryStringByUrl()
-      console.log("错误----------------", vm.errorInfo)
-    })
-  },
-  computed: {},
-  methods: {},
-}
+      message
+    }
+  }
+})
 </script>
 <style lang='scss' scoped>
 //@import url(); 引入公共css类

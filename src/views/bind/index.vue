@@ -184,9 +184,10 @@ export default defineComponent({
     }
     const handleClickSave = async (): Promise<any> => {
       try {
+        const member = JSON.parse(localStorage.getItem("MEMBER_INFO") || "")
         const { data } = await BindService.cardBindApi({
           ...state.bindForm,
-          memberNo: memberInfo.value.memberNo,
+          memberNo: memberInfo.value.memberNo || member.memberNo,
           orgId: localStorage.getItem("ORG_ID")
         })
         if (data.code === 200) {

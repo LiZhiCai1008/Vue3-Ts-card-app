@@ -2,7 +2,6 @@
  * Created by lizhicai on 5/31/2021.
  */
 // import fl from "./float";
-
 export const amountFmt = (value: number): string => {
   return (value / 100).toFixed(2);
 }

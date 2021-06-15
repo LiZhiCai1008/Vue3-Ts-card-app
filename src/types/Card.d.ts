@@ -13,3 +13,7 @@ export interface MemberInfo {
   memberNo: string | number,
   [key: string]: any
 }
+
+export interface FormatType {
+  (value: number): string
+}

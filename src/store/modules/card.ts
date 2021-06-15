@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { CardService } from '@/api/card'
 import router from '@/router/index'
-// import { amountFmt } from '@/utils/filter'
+import { amountFmt } from '@/utils/filter'
 import { GetCardInfoParams } from "@/api/types/Card"
 import { Card } from "@/types/Card.d"
 type State = {
@@ -201,7 +201,7 @@ export default {
         1: { title: '确定取消挂失', message: '取消挂失后，储值卡可正常购买，卡片遗失后建议申请补卡~' },
         2: { title: '确定取消补卡', message: '取消补卡后，储值卡可正常购买，卡片遗失后建议申请补卡~' },
         3: { title: '确定挂失', message: '挂失后，将无法刷卡购买' },
-        // 4: { title: '确定申请补卡', message: `补卡将扣除${amountFmt(state.cardInfo.productionCost || 0)}元工本费~` }
+        4: { title: '确定申请补卡', message: `补卡将扣除${amountFmt(state.cardInfo.productionCost || 0)}元工本费~` }
       }
     }
   }
