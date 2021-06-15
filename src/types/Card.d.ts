@@ -25,3 +25,14 @@ export interface MenuItem {
   query?: any,
   auth: boolean
 }
+// 套餐item
+export interface PackageItem {
+  cardId: string,
+  gmtCreated?: string,
+  rechargeAmount: number,
+  rechargeItemSendId: number,
+  rechargeId: number,
+  gmtModified?: string,
+  sendAmount: number,
+  checked?: boolean
+}

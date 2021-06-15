@@ -4,7 +4,7 @@
       <div class="content card-wrap lk-p-t-12">
         <div
           :style="{
-            backgroundImage: 'url(' + $baseImg + (cardInfo.coverUrl || 'photo/h5C/card/card_default.png') + ')'
+            backgroundImage: 'url(' + baseImg + (cardInfo.coverUrl || 'photo/h5C/card/card_default.png') + ')'
           }"
           class="card-box content lk-relative"
         >
@@ -13,7 +13,7 @@
               round
               width="36"
               height="36"
-              :src="$baseImg + cardInfo.cardLogo || 'photo/h5C/card/card_logo.png'"
+              :src="baseImg + cardInfo.cardLogo || 'photo/h5C/card/card_logo.png'"
             />
             <span class="info lk-font-16 van-ellipsis">{{ cardInfo.cardName }}</span>
           </div>
@@ -32,8 +32,8 @@
             @click="handleChangeAmount(box)"
           >
             <div class="lk-flex-1 lk-flex">
-              <span class="amount">{{ box.rechargeAmount | amountFmt }} 元</span>
-              <span v-if="box.sendAmount" class="amount-give">送{{ box.sendAmount | amountFmt }}元</span>
+              <span class="amount">{{ amountFmt(box.rechargeAmount) }} 元</span>
+              <span v-if="box.sendAmount" class="amount-give">送{{ amountFmt(box.sendAmount) }}元</span>
             </div>
             <van-checkbox v-model="box.checked" checked-color="#F8B500" icon-size="18px" />
           </div>
@@ -78,15 +78,15 @@
       :visible="isPopShow"
       title="会员卡充值协议"
     >
-      <div slot="content">
+      <template v-slot:content>
         <p class="agreement-content">
           1、充值成功后，暂不支持线上退款，如需退款，请联系商户处理，如与商户存在冲突，可联系大黄鹅官方客服介入处理。<br>
           2、充值金额用于指定售货机购买消费，不能兑换现金使用，不计利息。<br>
           3、若您以非法、欺诈或利用本平台漏洞的方式使用储值卡，本平台有权随时终止您使用储值卡在本平台购买。 <br>
           4、账号余额不超过200元，超过200元不支持充值，单日充值次数不超过2次。
         </p>
-      </div>
-      <div slot="footer" class="content">
+      </template>
+      <template v-slot:footer class="content">
         <van-button
           class="lk-m-t-16 font-1"
           color="#F8B500"
@@ -94,215 +94,243 @@
           round
           @click="handleClickApply"
         >同意协议</van-button>
-      </div>
+      </template>
     </Popup>
   </Page>
 </template>
 
-<script>
-import Popup from '@/components/Popups'
+<script lang="ts">
+import Popup from '@/components/Popups.vue'
 import { Toast } from 'vant'
-import { getChargePackageApi, wxPayApi } from '@/api/app'
-import { mapState, mapMutations } from 'vuex'
-import { getWxJsConfigAction } from '@/utils/wx-config'
-export default {
+import { AppService } from '@/api/app'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+import { PackageItem, FormatType } from '@/types/Card.d'
+import { amountFmt } from '@/utils/filter'
+import { defineComponent, ref, computed, reactive, getCurrentInstance, toRefs, onActivated, nextTick, ComputedRef } from 'vue'
+export default defineComponent({
   name: "Recharge",
   components: {
     Popup
   },
-  data() {
-    return {
+  setup() {
+    const store = useStore()
+    const router = useRouter()
+    const app = getCurrentInstance()
+    const baseImg = app && app.appContext.config.globalProperties.$baseImg
+    const state = reactive<{
+      packageList: PackageItem[],
+      currentAmount: string,
+      otherAmount: boolean,
+      loading: boolean,
+      agree: boolean,
+      isViewFirst: boolean,
+      isRechargeSuccess: boolean,
+      amountFmt: FormatType
+    }>({
       packageList: [],
-      currentAmount: 0,
+      currentAmount: "0",
       otherAmount: false,
       loading: false,
       agree: false,
       isViewFirst: false,
-      isRechargeSuccess: false
-    }
-  },
-  beforeRouteEnter (to, from, next) {
-    // ...
-    next(vm => {
-      vm.getRechargePackage()
+      isRechargeSuccess: false,
+      amountFmt
     })
-  },
-  computed: {
-    ...mapState('app', ['isPopShow']),
-    ...mapState('card', ['cardInfo']),
-    ...mapState('entery', ['memberInfo']),
-    selectedPackage() {
-      return this.packageList.find(item => item.checked) || {}
-    }
-  },
-  methods: {
-    ...mapMutations('app', ['SET_POP_SHOW']),
+    const otherInput = ref(null as HTMLInputElement | null)
+    const isPopShow = computed(() => store.state.app.isPopShow)
+    const cardInfo = computed(() => store.state.card.cardInfo)
+    const memberInfo = computed(() => store.state.entery.memberInfo)
+    const selectedPackage: ComputedRef = computed(() => state.packageList.find((item: PackageItem) => item.checked))
+
+
+    onActivated(() => {
+      getRechargePackage()
+    })
+
     // 获取充值套餐
-    async getRechargePackage() {
+    const getRechargePackage = async ():Promise<void> => {
       try {
-        const { code, content } = await getChargePackageApi({
-          cardNo: this.cardInfo.cardNo,
-          serialNo: this.cardInfo.serialNo
+        const { data } = await AppService.getChargePackageApi({
+          cardNo: cardInfo.value.cardNo,
+          serialNo: cardInfo.value.serialNo
         })
-        if (code === 200) {
-          (content || []).forEach((item, idx) => {
+        if (data.code === 200) {
+          (data.content || []).forEach((item: PackageItem, idx: number) => {
             if (!idx) {
               item.checked = true
-              this.currentAmount = (item.rechargeAmount / 100).toFixed(2)
+              state.currentAmount = (item.rechargeAmount / 100).toFixed(2)
             } else {
               item.checked = false
             }
           })
-          this.packageList = content || []
+          state.packageList = data.content || []
         }
       } catch (error) {
         console.log(error)
       }
-    },
+    }
+
     // 检查输入金额
-    checkAmount(value) {
-      let priceNum = Number(value)
+    const checkAmount = (value: string): string => {
+      const priceNum = Number(value)
       if (priceNum < 0 || priceNum > 200) {
         return "充值金额不能大于200"
       } else {
-        let priceStr = priceNum.toString().split(".")[1] // 200.0000001
+        const priceStr = priceNum.toString().split(".")[1] // 200.0000001
         if (priceStr && priceStr.length > 2) {
           return "金额限制为2位小数"
         } else {
-          return false
+          return ""
         }
       }
-    },
-    handleChangeAmount(item) {
+    }
+
+    const handleChangeAmount = (item: PackageItem): void => {
       console.log(item)
-      this.otherAmount = false
-      this.currentAmount = (item.rechargeAmount / 100).toFixed(2)
-      this.packageList.forEach(amount => {
+      state.otherAmount = false
+      state.currentAmount = (item.rechargeAmount / 100).toFixed(2)
+      state.packageList.forEach((amount: PackageItem): void => {
         if (amount.rechargeItemSendId === item.rechargeItemSendId) {
           amount.checked = true
         } else {
           amount.checked = false
         }
       })
-    },
+    }
+
     // 点击其他金额
-    handleOtherAmount() {
-      this.currentAmount = ""
-      this.otherAmount = true
-      this.packageList.forEach(amount => {
+    const handleOtherAmount = ():void => {
+      state.currentAmount = ""
+      state.otherAmount = true
+      state.packageList.forEach((amount: PackageItem): void => {
         amount.checked = false
       })
-      this.$nextTick(() => {
-        this.$refs.otherInput.focus()
+      nextTick(() => {
+        otherInput?.value?.focus()
       })
-    },
+    }
+
     // 点击充值按钮 如果没有同意协议就弹出协议
-    handleClickRecharge() {
-      if (!this.agree) {
-        this.isViewFirst = false
-        this.SET_POP_SHOW(true)
+    const handleClickRecharge = (): void => {
+      if (!state.agree) {
+        state.isViewFirst = false
+        store.commit("app/SET_POP_SHOW", true)
         return
       }
-      this.submitRecharge()
-    },
-    handleViewAgreement() {
-      this.isViewFirst = true
-      this.SET_POP_SHOW(true)
-    },
-    async handleClickApply() {
-      await this.SET_POP_SHOW(false)
-      this.agree = true
-      !this.isViewFirst && this.submitRecharge()
-    },
-    async submitRecharge() {
-      if (this.currentAmount <= 0) {
-        this.$toast('充值金额需大于0')
-        return false
+      submitRecharge()
+    }
+
+    const handleViewAgreement = (): void => {
+      state.isViewFirst = true
+      store.commit("app/SET_POP_SHOW", true)
+    }
+
+    const handleClickApply = (): void => {
+      store.commit("app/SET_POP_SHOW", true)
+      state.agree = true
+      !state.isViewFirst && submitRecharge()
+    }
+
+    const submitRecharge = async (): Promise<void> => {
+      if (Number(state.currentAmount) <= 0) {
+        Toast('充值金额需大于0')
+        return
       }
-      const errorMsg = this.checkAmount(this.currentAmount)
+      const errorMsg = checkAmount(state.currentAmount)
       console.log(errorMsg)
       if (errorMsg) {
-        this.$toast(errorMsg)
-        return false
+        Toast(errorMsg)
+        return
       }
       console.log("充值")
       try {
-        this.loading = true
-        const { code, content } = await wxPayApi({
-          cardNo: this.cardInfo.cardNo,
-          serialNo: this.cardInfo.serialNo,
-          amount: this.currentAmount,
-          packAgeId: this.selectedPackage.rechargeItemSendId,
-          phone: this.memberInfo.phone,
-          openId: localStorage.getItem("OPEN_ID")
+        state.loading = true
+        const { data } = await AppService.wxPayApi({
+          cardNo: cardInfo.value.cardNo,
+          serialNo: cardInfo.value.serialNo,
+          amount: Number(state.currentAmount),
+          packAgeId: selectedPackage.value.rechargeItemSendId,
+          phone: memberInfo.value.phone,
+          openId: localStorage.getItem("OPEN_ID") || ""
         })
-        if (code === 200) {
-          console.log(content)
-          if (content.isSuccess) {
+        if (data.code === 200) {
+          console.log(data.content)
+          if (data.content.isSuccess) {
             // 微信下单成功
-            let config = JSON.parse(content.body)
-            this.getWeixinPay(config)
+            getWeixinPay(data.content.body)
           } else {
-            this.$toast(content.message)
-            this.loading = false
+            Toast(data.content.message)
+            state.loading = false
           }
         } else {
-          this.loading = false
+          state.loading = false
         }
       } catch (error) {
         console.log(error)
-        this.loading = false
+        state.loading = false
       }
-    },
+    }
+
     // 调用微信收银台
-    async getWeixinPay(config) {
-      let that = this
-      await getWxJsConfigAction()
-      window.wx.chooseWXPay({
-        timestamp: config.timeStamp, // 支付签名时间戳，注意微信jssdk中的所有使用timestamp字段均为小写。但最新版的支付后台生成签名使用的timeStamp字段名需大写其中的S字符
-        nonceStr: config.nonceStr, // 支付签名随机串，不长于 32 位
-        package: config.package, // 统一支付接口返回的prepay_id参数值，提交格式如：prepay_id=\*\*\*）
-        signType: config.signType, // 签名方式，默认为'SHA1'，使用新版支付需传入'MD5'
-        paySign: config.paySign, // 支付签名
-        success: function(res) {
-          // 支付成功后的回调函数
-          console.log("success---->", res, config)
-          that.loading = false
-          that.isRechargeSuccess = true
-          that.$toast("支付成功")
-          const toast = Toast.loading({
-            message: '充值中...',
-            forbidClick: true,
-            duration: 3000
-          });
-          setTimeout(() => {
-            toast.clear()
-            that.$router.replace({
-              name: "User"
-            })
-          }, 3000);
+    const getWeixinPay = async (body: string): Promise<void> => {
+      let config = JSON.parse(body)
+      window.WeixinJSBridge.invoke(
+        "getBrandWCPayRequest",
+        {
+          appId: config.appId, //公众号名称，由商户传入
+          timeStamp: `${config.timeStamp}`, //时间戳，自1970年以来的秒数
+          nonceStr: config.nonceStr, //随机串
+          package: config.package,
+          signType: config.signType, //微信签名方式：
+          paySign: config.paySign //微信签名
         },
-        error: function(err) {
-          console.log("error---->", err)
-          that.$toast("支付错误")
-          that.loading = false
-        },
-        // 支付取消回调函数
-        cancel: function(res) {
-          console.log("cancel---->", res)
-          that.$toast("用户取消支付")
-          that.loading = false
-        },
-        // 支付失败回调函数
-        fail: function(res) {
-          console.log("fail---->", res)
-          that.$toast("支付失败")
-          that.loading = false
+        (res: any) => {
+          if (res.err_msg === "get_brand_wcpay_request:ok") {
+            // 支付成功后的回调函数
+            state.loading = false
+            state.isRechargeSuccess = true
+            Toast("支付成功")
+            const toast = Toast.loading({
+              message: '充值中...',
+              forbidClick: true,
+              duration: 3000
+            });
+            setTimeout(() => {
+              toast.clear()
+              router.replace({
+                name: "User"
+              })
+            }, 3000);
+          } else {
+            if (res.err_msg === "get_brand_wcpay_request:cancel") {
+              // 取消支付
+              Toast("用户取消支付")
+              state.loading = false
+            } else {
+              // 支付错误
+              Toast("支付错误")
+              state.loading = false
+            }
+          }
         }
-      })
+      );
+    }
+    return {
+      ...toRefs(state),
+      baseImg,
+      isPopShow,
+      cardInfo,
+      memberInfo,
+      otherInput,
+      handleChangeAmount,
+      handleOtherAmount,
+      handleViewAgreement,
+      handleClickApply,
+      handleClickRecharge
     }
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>

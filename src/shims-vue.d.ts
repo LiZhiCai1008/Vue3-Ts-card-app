@@ -6,3 +6,4 @@ declare module '*.vue' {
 }
 declare module 'nprogress'
 declare var wx: any;
+declare var WeixinJSBridge: any;
