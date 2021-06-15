@@ -113,7 +113,7 @@ export default defineComponent({
     const findFlag = computed(() => store.state.app.findFlag)
     const orgId = computed(() => store.state.app.orgId)
     const appId = app && app.appContext.config.globalProperties.$appId
-    const getWxOpenIdAction = async (): Promise<any> => {
+    const getWxOpenIdAction = async (): Promise<void> => {
       const { data } = await EnteryService.getWeixinOpenIdApi({
         code: state.code,
         appId: appId,
@@ -125,7 +125,7 @@ export default defineComponent({
         localStorage.setItem("OPEN_ID", state.openId)
       }
     }
-    const getBindInfoAction = async (): Promise<any> => {
+    const getBindInfoAction = async (): Promise<void> => {
       console.log(findFlag.value)
       const { data } = await EnteryService.getBindByOpenidApi({
         openId: state.openId,
@@ -137,17 +137,17 @@ export default defineComponent({
           state.loading = false
           toast.clear()
           state.showLogin = true
-          return false
+          return
         }
         handlePageToDetail(true)
       }
     }
-    const handleConfirmBind = async (): Promise<any> => {
+    const handleConfirmBind = async (): Promise<void> => {
       state.loading = true
       if (!state.login.phone || !state.login.phoneCode) {
         Toast("请正确填写")
         state.loading = false
-        return false
+        return
       }
       try {
         const { data } = await EnteryService.bindMemberApi({
@@ -171,7 +171,7 @@ export default defineComponent({
       }
     }
     // 跳转详情
-    const handlePageToDetail = async (loading: boolean): Promise<any> => {
+    const handlePageToDetail = async (loading: boolean): Promise<void> => {
       console.log(loading)
       try {
         await store.dispatch("card/getCardInfoAction", { check: true })
