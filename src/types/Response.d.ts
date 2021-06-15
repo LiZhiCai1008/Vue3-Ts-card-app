@@ -8,3 +8,11 @@ export interface HttpResponse {
     [key: string]: any
   }
 }
+
+// 签名类型声明
+export interface SignType {
+  "Dahuange-User-Access-App-Id": string,
+  "Dahuange-User-Access-App-Nonce": string,
+  "Dahuange-User-Access-App-Timestrap": number,
+  "Dahuange-User-Access-App-Sign": string
+}

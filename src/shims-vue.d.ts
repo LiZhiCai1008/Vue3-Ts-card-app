@@ -5,5 +5,8 @@ declare module '*.vue' {
   export default component
 }
 declare module 'nprogress'
+declare module 'crypto-js'
+declare module 'json-stable-stringify'
+
 declare var wx: any;
 declare var WeixinJSBridge: any;

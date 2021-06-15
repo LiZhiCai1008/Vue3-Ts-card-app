@@ -6,6 +6,7 @@
 import { AppService } from '@/api/app'
 import { Toast } from 'vant'
 import { defineComponent, reactive, toRefs } from "vue";
+import { GetMsgCodeParams } from '@/api/types/App'
 export default defineComponent({
   props: {
     type: {
@@ -18,7 +19,9 @@ export default defineComponent({
     },
     params: {
       type: Object,
-      default: () => {}
+      default: () => {
+        return {}
+      }
     }
   },
   setup(props) {
@@ -26,7 +29,7 @@ export default defineComponent({
       codeTime: "发送验证码",
       timer: undefined
     })
-    const timerRunning = () => {
+    const timerRunning = (): void => {
       if (state.timer) return
       let time = 60
       state.timer = setInterval(() => {
@@ -39,13 +42,13 @@ export default defineComponent({
         }
       }, 1000)
     }
-    const sendMsgCode = async () => {
+    const sendMsgCode = async (): Promise<void> => {
       if (state.timer) return
       if (!/^1[3456789]\d{9}$/.test(props.phone.toString())) {
         Toast("请使用正确的手机号")
-        return false
+        return
       }
-      let body = {
+      let body: GetMsgCodeParams = {
         phone: props.phone,
         templateType: props.type,
         params: props.params,
@@ -65,7 +68,6 @@ export default defineComponent({
     }
     return {
       ...toRefs(state),
-      timerRunning,
       sendMsgCode
     }
   },

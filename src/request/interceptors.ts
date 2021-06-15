@@ -2,6 +2,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import qs from "qs"
 import { Toast } from 'vant';
+import getSignOptions from './getSignOptions'
 
 const service: AxiosInstance = axios.create({
   // 联调
@@ -89,8 +90,7 @@ service.interceptors.request.use((config: AxiosRequestConfig): AxiosRequestConfi
     "Content-Type": "application/json;charset=UTF-8",
     "Dahuange-User-Access-Token": localStorage.getItem("casToken") || ""
   };
-  // const signOptions = getSignOptions("RECHARGE_CARD_CONSUMER", config);
-  const signOptions = {};
+  const signOptions = getSignOptions("RECHARGE_CARD_CONSUMER", config);
   config.headers = {
     ...config.headers,
     ...signOptions

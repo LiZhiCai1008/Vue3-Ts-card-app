@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, ComputedRef } from 'vue';
 import { useRouter, useRoute } from "vue-router";
 export default defineComponent({
   name: "Page",
@@ -46,7 +46,7 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     const router = useRouter();
-    const routeTitle = computed((): unknown => {
+    const routeTitle: ComputedRef = computed((): unknown => {
       return route.meta.title;
     })
     const onClickLeft = (): void => {

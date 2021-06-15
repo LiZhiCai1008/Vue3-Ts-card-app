@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, Ref } from 'vue'
+import { defineComponent, computed, ComputedRef } from 'vue'
 export default defineComponent({
   props: {
     visible: {
@@ -31,7 +31,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const isShow = computed(() => {
+    const isShow: ComputedRef<boolean> = computed(() => {
       return props.visible
     })
     return {

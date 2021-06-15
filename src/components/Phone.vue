@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, computed } from 'vue'
+  import { defineComponent, computed, ComputedRef } from 'vue'
 export default defineComponent({
   props: {
     phone: {
@@ -12,7 +12,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const phoneText = computed(() => {
+    const phoneText: ComputedRef<string> = computed(() => {
       if (/^1\d{10}$/.test(props.phone)) {
         return props.phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1 **** $2");
       } else {
