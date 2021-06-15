@@ -1,11 +1,10 @@
-import { useRouter } from 'vue-router'
+import router from '@/router/index'
 type State = {
   isPopShow: boolean,
   orgId: string | number,
   appId: string | number,
   findFlag: boolean
 }
-const router = useRouter()
 export default {
   namespaced: true,
   state: {

@@ -97,6 +97,7 @@ import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
 import { Dialog } from 'vant'
 import { NumberCut } from '@/utils/format'
+import { FormatType } from '@/types/Card.d'
 export default defineComponent({
   name: "CardList",
   components: {
@@ -109,9 +110,8 @@ export default defineComponent({
     const route = useRoute()
     // 创建仓库
     const store = useStore()
-    console.log(store.state)
 
-    const state = reactive<{ status: number, NumberCut: any }>({
+    const state = reactive<{ status: number, NumberCut: FormatType }>({
       status: 0,
       NumberCut
     })
@@ -121,9 +121,9 @@ export default defineComponent({
       state.status = Number(route.query.status || 0)
       if (state.status === 1) {
         // 切换卡，多张卡
-        const { data } = await store.dispatch("card/getCardListAction")
-        console.log(data, "---------------")
-        if (data.content && !data.content.length) {
+        const res = await store.dispatch("card/getCardListAction")
+        console.log(res, "---------------")
+        if (res && !res.length) {
           state.status = 0
         }
         console.log(state.status, typeof state.status)

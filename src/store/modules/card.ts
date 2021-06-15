@@ -144,13 +144,13 @@ export default {
         if (data.code === 200) {
           console.log(data.content)
           ctx.commit("SET_CARD_LIST", data.content || [])
-          return data
+          return data.content
         } else {
-          return {}
+          return []
         }
       } catch (error) {
         console.log(error)
-        return error
+        return []
       }
     }
   },

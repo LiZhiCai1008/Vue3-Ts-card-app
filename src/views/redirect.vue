@@ -1,6 +1,6 @@
 <template>
   <van-popup
-    v-model="showLogin"
+    v-model:show="showLogin"
     :close-on-click-overlay="false"
     round
   >

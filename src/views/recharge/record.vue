@@ -24,7 +24,7 @@
 <script lang="ts">
 import { AppService } from '@/api/app'
 import { useStore } from 'vuex'
-import { FormatType } from '@/types/Card'
+import { FormatType } from '@/types/Card.d'
 import { amountFmt } from '@/utils/filter'
 import { defineComponent, computed, reactive, toRefs } from 'vue'
 export default defineComponent({
